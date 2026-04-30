@@ -14,7 +14,7 @@
         html,body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif;min-height:100%;display:flex;flex-direction:column}
         .navbar{background:rgba(13,13,13,0.94);border-bottom:1px solid var(--border);padding:0 40px;height:62px;display:flex;align-items:center;justify-content:space-between}
         .nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none}
-        .nav-logo img{height:32px;width:32px;object-fit:contain;filter:invert(1) brightness(1.2)}
+        .nav-logo img{height:32px;width:32px;object-fit:contain;}
         .nav-logo-text{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:4px;color:var(--white)}
         .nav-link{color:var(--muted);text-decoration:none;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;transition:color .2s}
         .nav-link:hover{color:var(--white)}

@@ -20,7 +20,7 @@
         .wrapper{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:32px}
         .brand{text-align:center}
         .brand .logo-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:8px}
-        .brand .logo-row img{height:40px;width:40px;object-fit:contain;filter:invert(1) brightness(1.3)}
+        .brand .logo-row img{height:40px;width:40px;object-fit:contain;}
         .brand h1{font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:8px;color:var(--white);line-height:1}
         .brand p{font-size:12px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
         .login-card{width:400px;background:rgba(22,22,22,0.9);border:1px solid var(--border);border-radius:5px;overflow:hidden;backdrop-filter:blur(20px)}
