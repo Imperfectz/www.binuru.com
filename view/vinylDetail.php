@@ -226,6 +226,51 @@ $price     = '₱' . number_format($vinyl['price'], 2);
             font-family:'DM Sans',sans-serif;
         }
         .btn-buy:hover{filter:brightness(1.08);transform:translateY(-2px);}
+        .btn-buy.loading{opacity:.6;cursor:not-allowed;pointer-events:none;}
+
+        /* ── PURCHASE MODAL ── */
+        .modal-overlay{
+            display:none;position:fixed;inset:0;z-index:999;
+            background:rgba(0,0,0,.75);backdrop-filter:blur(6px);
+            align-items:center;justify-content:center;
+        }
+        .modal-overlay.open{display:flex;}
+        .modal-box{
+            background:var(--card);border:1px solid var(--border);border-radius:6px;
+            width:100%;max-width:420px;padding:36px 32px 28px;position:relative;
+            animation:modal-in .2s ease;
+        }
+        @keyframes modal-in{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}
+        .modal-eyebrow{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--accent);margin-bottom:8px;}
+        .modal-title{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;margin-bottom:4px;}
+        .modal-sub{font-size:12px;color:var(--muted);margin-bottom:24px;}
+        .modal-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--border);}
+        .modal-row:last-of-type{border-bottom:none;}
+        .modal-label{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+        .modal-val{font-size:13px;font-weight:500;}
+        .modal-price{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--accent);}
+        .modal-actions{display:flex;gap:12px;margin-top:24px;}
+        .modal-cancel{flex:1;padding:12px;border:1px solid var(--border);background:transparent;color:var(--muted);
+            border-radius:3px;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all .2s;}
+        .modal-cancel:hover{border-color:#555;color:var(--white);}
+        .modal-confirm{flex:2;padding:12px;border:none;background:var(--accent);color:#0d0d0d;
+            border-radius:3px;font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:700;cursor:pointer;transition:filter .2s;}
+        .modal-confirm:hover{filter:brightness(1.1);}
+        .modal-confirm:disabled{opacity:.5;cursor:not-allowed;}
+
+        /* ── SUCCESS TOAST ── */
+        .toast{
+            position:fixed;bottom:32px;right:32px;z-index:9999;
+            background:var(--card);border:1px solid var(--accent3);border-radius:4px;
+            padding:16px 22px;display:flex;align-items:center;gap:14px;
+            transform:translateY(20px);opacity:0;transition:all .3s ease;pointer-events:none;
+            max-width:340px;
+        }
+        .toast.show{transform:translateY(0);opacity:1;}
+        .toast-icon{font-size:20px;flex-shrink:0;}
+        .toast-text{font-size:12px;line-height:1.5;}
+        .toast-title{font-weight:600;color:var(--accent3);letter-spacing:.5px;}
+        .toast-sub{color:var(--muted);font-size:11px;margin-top:2px;}
         .btn-back{
             display:inline-flex;align-items:center;gap:6px;
             font-size:11px;letter-spacing:2px;text-transform:uppercase;
@@ -322,7 +367,13 @@ $price     = '₱' . number_format($vinyl['price'], 2);
                 <div class="buy-price"><?= $price ?></div>
                 <div class="buy-right">
                     <span class="stock-badge"><?= $vinyl['stock'] > 0 ? '✦ Available' : '✕ Sold Out' ?></span>
-                    <button class="btn-buy" <?= $vinyl['stock'] < 1 ? 'disabled style="opacity:.4;cursor:not-allowed"' : '' ?>>
+                    <button class="btn-buy" id="btnBuy"
+                        data-vinyl-id="<?= $vinyl['vinyl_id'] ?>"
+                        data-title="<?= htmlspecialchars($vinyl['title']) ?>"
+                        data-artist="<?= htmlspecialchars($vinyl['artist_name'] ?? 'Unknown') ?>"
+                        data-price="<?= $vinyl['price'] ?>"
+                        data-price-fmt="<?= $price ?>"
+                        <?= $vinyl['stock'] < 1 ? 'disabled style="opacity:.4;cursor:not-allowed"' : '' ?>>
                         <?= $vinyl['stock'] > 0 ? 'Add to Cart' : 'Sold Out' ?>
                     </button>
                 </div>
@@ -371,5 +422,101 @@ $price     = '₱' . number_format($vinyl['price'], 2);
 })();
 </script>
 <?php endif; ?>
+
+<!-- ── PURCHASE CONFIRMATION MODAL AI assisted ── -->
+<div class="modal-overlay" id="purchaseModal">
+    <div class="modal-box">
+        <p class="modal-eyebrow">Confirm Purchase</p>
+        <h2 class="modal-title" id="modalTitle">RECORD TITLE</h2>
+        <p class="modal-sub" id="modalArtist">Artist Name</p>
+        <div class="modal-row">
+            <span class="modal-label">Item</span>
+            <span class="modal-val" id="modalItem">—</span>
+        </div>
+        <div class="modal-row">
+            <span class="modal-label">Status</span>
+            <span class="modal-val" style="color:var(--accent3)">✦ In Stock</span>
+        </div>
+        <div class="modal-row">
+            <span class="modal-label">Total</span>
+            <span class="modal-price" id="modalPrice">₱0.00</span>
+        </div>
+        <div class="modal-actions">
+            <button class="modal-cancel" id="modalCancel">Cancel</button>
+            <button class="modal-confirm" id="modalConfirm">Place Order →</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast">
+    <span class="toast-icon">✦</span>
+    <div class="toast-text">
+        <div class="toast-title" id="toastTitle">Order Placed!</div>
+        <div class="toast-sub" id="toastSub">Your record is on its way.</div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const btn    = document.getElementById('btnBuy');
+    const modal  = document.getElementById('purchaseModal');
+    const toast  = document.getElementById('toast');
+    if (!btn) return;
+
+    const vinylId  = btn.dataset.vinylId;
+    const title    = btn.dataset.title;
+    const artist   = btn.dataset.artist;
+    const price    = parseFloat(btn.dataset.price);
+    const priceFmt = btn.dataset.priceFmt;
+
+    document.getElementById('modalTitle').textContent  = title.toUpperCase();
+    document.getElementById('modalArtist').textContent = artist;
+    document.getElementById('modalItem').textContent   = title;
+    document.getElementById('modalPrice').textContent  = priceFmt;
+
+    btn.addEventListener('click', () => modal.classList.add('open'));
+    document.getElementById('modalCancel').addEventListener('click', () => modal.classList.remove('open'));
+    modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+
+    document.getElementById('modalConfirm').addEventListener('click', async () => {
+        const confirmBtn = document.getElementById('modalConfirm');
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Placing…';
+
+        try {
+            const res  = await fetch('../controllers/placeOrder.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ vinyl_id: vinylId, total: price })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                modal.classList.remove('open');
+
+                // Show toast
+                document.getElementById('toastTitle').textContent = 'Order #' + data.order_id + ' Placed!';
+                document.getElementById('toastSub').textContent   = priceFmt + ' — Thank you for your purchase.';
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 4000);
+
+                // Disable button (stock decremented)
+                btn.textContent = 'Sold Out';
+                btn.disabled = true;
+                btn.style.opacity = '.4';
+                btn.style.cursor  = 'not-allowed';
+                document.querySelector('.stock-badge').textContent = '✕ Sold Out';
+            } else {
+                alert(data.message || 'Something went wrong.');
+            }
+        } catch (err) {
+            alert('Network error. Please try again.');
+        } finally {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = 'Place Order →';
+        }
+    });
+})();
+</script>
 </body>
 </html>

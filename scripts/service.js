@@ -31,6 +31,12 @@ function isValidUsername(uname) {
     return /^[a-zA-Z0-9_]{3,50}$/.test(uname.trim());
 }
 
+function isValidPassword(pw) {
+    if (!pw) return false;
+    const special = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>\/?`~]/;
+    return special.test(pw);
+}
+
 function loginFunc() {
     const loguname    = document.getElementById("logun").value.trim();
     const logpassword = document.getElementById("logpass").value;
@@ -70,6 +76,7 @@ function addFunc() {
     if (!isValidUsername(userName)) errors.push("Username must be 3–50 characters (letters, numbers, underscores only).");
     if (!isValidEmail(email))   errors.push("Please enter a valid email address.");
     if (password.length < 8)   errors.push("Password must be at least 8 characters.");
+    else if (!isValidPassword(password)) errors.push("Password must include at least one special character (e.g. !@#$%).");
 
     if (errors.length) {
         swalDark.fire({ icon: "error", title: "Invalid Input", html: errors.map(e => `• ${e}`).join("<br>") });
@@ -107,6 +114,7 @@ function updateFunc(userID) {
     if (!isValidUsername(userName)) errors.push("Username must be 3–50 characters (letters, numbers, underscores only).");
     if (!isValidEmail(email))   errors.push("Please enter a valid email address.");
     if (password.length < 8)   errors.push("Password must be at least 8 characters.");
+    else if (!isValidPassword(password)) errors.push("Password must include at least one special character (e.g. !@#$%).");
 
     if (errors.length) {
         swalDark.fire({ icon: "error", title: "Invalid Input", html: errors.map(e => `• ${e}`).join("<br>") });

@@ -20,15 +20,16 @@ function sendWelcomeEmail($toEmail, $toName) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <style>
-    body{background:#f6f6f6;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif}
-    .email-wrap{max-width:600px;margin:36px auto;background:#fff;padding:28px;border-radius:8px;text-align:center;border:1px solid #ececec}
-    .logo{width:84px;height:auto;margin:0 auto 12px}
-    h1{font-size:22px;margin:8px 0;color:#111}
-    p{color:#555;line-height:1.5;margin:8px 0}
-    .cta{display:inline-block;margin-top:18px;padding:10px 18px;background:#f5e642;color:#111;text-decoration:none;border-radius:4px;font-weight:700}
-    .footer{font-size:12px;color:#999;margin-top:22px}
-  </style>
+    <style>
+        body{background:#0d0d0d;margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;color:#e9e9e9}
+        .email-wrap{max-width:600px;margin:36px auto;background:#0f0f0f;padding:28px;border-radius:8px;text-align:center;border:1px solid #222}
+        .logo{width:84px;height:auto;margin:0 auto 12px;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6))}
+        h1{font-size:22px;margin:8px 0;color:#ffffff}
+        p{color:#cfcfcf;line-height:1.5;margin:8px 0}
+        .cta{display:inline-block;margin-top:18px;padding:10px 18px;background:#f5e642;color:#111;text-decoration:none;border-radius:4px;font-weight:700}
+        .footer{font-size:12px;color:#8f8f8f;margin-top:22px}
+        a{color:inherit}
+    </style>
 </head>
 <body>
   <div class="email-wrap">

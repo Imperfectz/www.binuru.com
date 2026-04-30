@@ -5,11 +5,7 @@ require_once '../bl/vinylManagement.php';
 
 $vm = new VinylManagement();
 
-/* ---------------------------------------------------------------
- *  Helper: handle a single file-upload field
- *  Returns the relative web path on success, null if no file,
- *  or outputs an error and exits on failure.
- * ------------------------------------------------------------- */
+/* Viny Detail animation - AI assisted*/
 function handleImageUpload($fieldName, $subDir)
 {
     // No file selected for this field — skip silently
@@ -78,9 +74,7 @@ function handleImageUpload($fieldName, $subDir)
     return 'uploads/' . $subDir . '/' . $filename;
 }
 
-/* ---------------------------------------------------------------
- *  Add or Edit vinyl
- * ------------------------------------------------------------- */
+
 if (isset($_POST['v_title'], $_POST['v_price'], $_POST['v_stock'])) {
 
     $id     = isset($_POST['v_id']) && $_POST['v_id'] !== '' ? (int)$_POST['v_id'] : null;
@@ -92,7 +86,7 @@ if (isset($_POST['v_title'], $_POST['v_price'], $_POST['v_stock'])) {
     $year   = !empty($_POST['v_year'])   ? (int)$_POST['v_year']   : null;
     $desc   = trim($_POST['v_desc'] ?? '');
 
-    // --- Server-side field validation ---
+    // ---validation AI assisted --- // 
     $errors = [];
     if ($title === '')  $errors[] = 'Title is required.';
     if ($price <= 0)    $errors[] = 'Price must be greater than 0.';
@@ -118,10 +112,48 @@ if (isset($_POST['v_title'], $_POST['v_price'], $_POST['v_stock'])) {
     exit;
 }
 
-/* ---------------------------------------------------------------
- *  Delete vinyl
- * ------------------------------------------------------------- */
+
 if (isset($_POST['v_delete_id'])) {
     $vm->removeVinyl((int)$_POST['v_delete_id']);
+    exit;
+}
+
+ /* Update order status ai assisted */
+
+if (isset($_SERVER['HTTP_X_ACTION']) && $_SERVER['HTTP_X_ACTION'] === 'updateOrderStatus') {
+    header('Content-Type: application/json');
+
+    $input    = json_decode(file_get_contents('php://input'), true);
+    $order_id = isset($input['order_id']) ? (int)$input['order_id'] : 0;
+    $status   = isset($input['status'])   ? $input['status']        : '';
+    $allowed  = ['Pending', 'Shipped', 'Completed', 'Cancelled'];
+
+    if (!$order_id || !in_array($status, $allowed)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Invalid input']);
+        exit;
+    }
+
+    try {
+        $database = new Database();
+        $db = $database->connect();
+
+        $db->prepare("UPDATE orders SET status = :status WHERE order_id = :id")
+           ->execute([':status' => $status, ':id' => $order_id]);
+
+        $statusRows   = $db->query("SELECT status, COUNT(*) as count FROM orders GROUP BY status")
+                           ->fetchAll(PDO::FETCH_ASSOC);
+        $totalRevenue = $db->query("SELECT SUM(total_amount) FROM orders WHERE status != 'Cancelled'")
+                           ->fetchColumn();
+
+        echo json_encode([
+            'success'      => true,
+            'statusRows'   => $statusRows,
+            'totalRevenue' => (float)$totalRevenue,
+        ]);
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
     exit;
 }

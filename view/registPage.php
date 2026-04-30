@@ -65,7 +65,7 @@
                     <div class="field"><label>First Name</label><input id="fName" type="text" placeholder="Juan"></div>
                     <div class="field"><label>Last Name</label><input id="lName" type="text" placeholder="Dela Cruz"></div>
                 </div>
-                <div class="field"><label>Username</label><input id="uName" type="text" placeholder="juanrecords"></div>
+                <div class="field"><label>Username</label><input id="uName" type="text" placeholder="juanrecords" maxlength="50"></div>
                 <div class="field"><label>Email</label><input id="email" type="email" placeholder="juan@email.com"></div>
                 <div class="field"><label>Password</label><input id="password" type="password" placeholder="••••••••"></div>
                 <button class="btn-signup" onclick="addFunc()">Create Account →</button>

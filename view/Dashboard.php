@@ -136,6 +136,28 @@ foreach ($orderStatuses as $status) {
         .chart-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;position:relative;}
         .chart-card h3{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;margin-bottom:20px;color:var(--white);}
         .chart-container{position:relative;height:280px;}
+
+        /* STATUS EDITOR */
+        .status-select{
+            -webkit-appearance:none;appearance:none;
+            border:1px solid transparent;border-radius:2px;
+            background:transparent;color:inherit;
+            font-size:9px;letter-spacing:2px;text-transform:uppercase;font-weight:600;
+            font-family:'DM Sans',sans-serif;cursor:pointer;padding:3px 8px;
+            transition:border-color .2s,background .2s;
+        }
+        .status-select:hover,.status-select:focus{border-color:var(--border);background:var(--surface);outline:none;}
+        .status-select.saving{opacity:.5;pointer-events:none;}
+        .status-select option{background:#1c1c1c;color:#f0ede8;}
+
+        /* flash animation when saved */
+        @keyframes saved-flash{0%{opacity:1}40%{opacity:.3}100%{opacity:1}}
+        .status-select.saved{animation:saved-flash .4s ease;}
+
+        /* inline save indicator */
+        .save-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent3);
+            margin-left:6px;opacity:0;transition:opacity .3s;vertical-align:middle;}
+        .save-dot.visible{opacity:1;}
     </style>
 </head>
 <body>
@@ -257,11 +279,27 @@ foreach ($orderStatuses as $status) {
                                     'Cancelled' => 'pill-red',
                                     default     => 'pill-muted'
                                 };
+                                $selectColor = match($o['status']) {
+                                    'Completed' => 'color:var(--accent3)',
+                                    'Shipped'   => 'color:var(--accent)',
+                                    'Cancelled' => 'color:var(--accent2)',
+                                    default     => 'color:var(--muted)'
+                                };
                             ?>
                             <tr>
                                 <td style="color:var(--muted)">#<?= $o['order_id'] ?></td>
                                 <td>₱<?= number_format($o['total_amount'], 2) ?></td>
-                                <td><span class="pill <?= $pillClass ?>"><?= $o['status'] ?></span></td>
+                                <td>
+                                    <select class="status-select pill <?= $pillClass ?>"
+                                            style="<?= $selectColor ?>"
+                                            data-order-id="<?= $o['order_id'] ?>"
+                                            data-current="<?= $o['status'] ?>">
+                                        <?php foreach(['Pending','Shipped','Completed','Cancelled'] as $s): ?>
+                                        <option value="<?= $s ?>" <?= $o['status'] === $s ? 'selected' : '' ?>><?= $s ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <span class="save-dot" id="dot-<?= $o['order_id'] ?>"></span>
+                                </td>
                             </tr>
                             <?php endforeach; else: ?>
                             <tr><td colspan="3" style="color:var(--muted);text-align:center;padding:28px">No orders yet.</td></tr>
@@ -308,7 +346,7 @@ foreach ($orderStatuses as $status) {
         };
 
         const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-        new Chart(revenueCtx, {
+        const revenueChart = new Chart(revenueCtx, {
             type: 'line',
             data: {
                 labels: <?= json_encode($monthLabels) ?>,
@@ -329,21 +367,14 @@ foreach ($orderStatuses as $status) {
         });
 
         const salesCtx = document.getElementById('salesChart').getContext('2d');
-        new Chart(salesCtx, {
+        const salesChart = new Chart(salesCtx, {
             type: 'bar',
             data: {
                 labels: <?= json_encode($monthLabels) ?>,
                 datasets: [{
                     label: 'Orders',
                     data: <?= json_encode($orderData) ?>,
-                    backgroundColor: [
-                        '#7df3c0',
-                        '#7df3c0',
-                        '#7df3c0',
-                        '#7df3c0',
-                        '#7df3c0',
-                        '#7df3c0'
-                    ],
+                    backgroundColor: ['#7df3c0','#7df3c0','#7df3c0','#7df3c0','#7df3c0','#7df3c0'],
                     borderRadius: 3,
                     borderSkipped: false
                 }]
@@ -352,7 +383,7 @@ foreach ($orderStatuses as $status) {
         });
 
         const statusCtx = document.getElementById('statusChart').getContext('2d');
-        new Chart(statusCtx, {
+        const statusChart = new Chart(statusCtx, {
             type: 'doughnut',
             data: {
                 labels: <?= json_encode($statusLabels) ?>,
@@ -378,6 +409,86 @@ foreach ($orderStatuses as $status) {
                 }
             }
         });
+
+        // ── STATUS COLOUR MAP ──
+        const STATUS_COLORS = {
+            Completed: '#7df3c0',
+            Shipped:   '#f5e642',
+            Cancelled: '#ff3c3c',
+            Pending:   '#888'
+        };
+        const PILL_CLASSES = {
+            Completed: 'pill-green',
+            Shipped:   'pill-yellow',
+            Cancelled: 'pill-red',
+            Pending:   'pill-muted'
+        };
+        const SELECT_COLORS = {
+            Completed: 'color:var(--accent3)',
+            Shipped:   'color:var(--accent)',
+            Cancelled: 'color:var(--accent2)',
+            Pending:   'color:var(--muted)'
+        };
+
+        function refreshStatusChart(statusRows) {
+            const labels = statusRows.map(r => r.status);
+            const counts = statusRows.map(r => parseInt(r.count));
+            const colors = statusRows.map(r => STATUS_COLORS[r.status] || '#888');
+            statusChart.data.labels = labels;
+            statusChart.data.datasets[0].data   = counts;
+            statusChart.data.datasets[0].backgroundColor = colors;
+            statusChart.update();
+        }
+
+        // ── INLINE STATUS EDITOR ──
+        document.querySelectorAll('.status-select').forEach(sel => {
+            sel.addEventListener('change', async function () {
+                const orderId = this.dataset.orderId;
+                const newStatus = this.value;
+                const dot = document.getElementById('dot-' + orderId);
+
+                // Swap pill class immediately for snappy feel
+                this.className = 'status-select pill ' + (PILL_CLASSES[newStatus] || 'pill-muted');
+                this.style.cssText = SELECT_COLORS[newStatus] || 'color:var(--muted)';
+                this.classList.add('saving');
+
+                try {
+                    const res  = await fetch('../controllers/vinylController.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Action': 'updateOrderStatus' },
+                        body: JSON.stringify({ order_id: orderId, status: newStatus })
+                    });
+                    const data = await res.json();
+
+                    if (data.success) {
+                        // Animate saved dot
+                        dot.classList.add('visible');
+                        setTimeout(() => dot.classList.remove('visible'), 1400);
+
+                        // Live-update status chart
+                        refreshStatusChart(data.statusRows);
+
+                        // Update revenue stat card if it changed (cancelled orders excluded)
+                        const revEl = document.querySelector('.stat-card:nth-child(4) .stat-value');
+                        if (revEl) {
+                            revEl.textContent = '₱' + Math.round(data.totalRevenue).toLocaleString();
+                        }
+
+                        this.dataset.current = newStatus;
+                    } else {
+                        // Revert on failure
+                        this.value = this.dataset.current;
+                        alert(data.message || 'Update failed');
+                    }
+                } catch (err) {
+                    this.value = this.dataset.current;
+                    alert('Network error. Please try again.');
+                } finally {
+                    this.classList.remove('saving');
+                }
+            });
+        });
     </script>
 </body>
+
 </html>
