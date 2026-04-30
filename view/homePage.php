@@ -255,7 +255,6 @@
         </div>
     </nav>
 
-    <!-- HERO -->
     <section class="hero">
         <div class="hero-left">
             <p class="hero-eyebrow">Est. 2025 · Analog Sound</p>
