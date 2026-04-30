@@ -240,7 +240,7 @@
         .footer p { font-size: 11px; letter-spacing: 2px; color: #333; text-transform: uppercase; }
     </style>
 </head>
-<body>
+<body> 
 
     <nav class="navbar" id="navbar">
         <a class="nav-logo" href="homePage.php">

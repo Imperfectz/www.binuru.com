@@ -337,9 +337,9 @@ foreach ($orderStatuses as $status) {
                     label: 'Orders',
                     data: <?= json_encode($orderData) ?>,
                     backgroundColor: [
-                        '#ff3c3c',
-                        '#ff3c3c',
-                        '#ff3c3c',
+                        '#7df3c0',
+                        '#7df3c0',
+                        '#7df3c0',
                         '#7df3c0',
                         '#7df3c0',
                         '#7df3c0'
