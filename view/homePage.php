@@ -231,7 +231,6 @@
         }
         .cta-bottom h2 span { color: var(--accent); }
 
-        /* ── FOOTER ── */
         .footer {
             padding: 24px 48px;
             border-top: 1px solid var(--border);

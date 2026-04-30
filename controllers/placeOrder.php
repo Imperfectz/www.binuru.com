@@ -35,7 +35,6 @@ try {
         exit;
     }
 
-    // Insert order
     $stmt = $db->prepare("
         INSERT INTO orders (userID, total_amount, status, order_date)
         VALUES (:userID, :total, 'Pending', NOW())
@@ -43,11 +42,9 @@ try {
     $stmt->execute([':userID' => $userID, ':total' => $total]);
     $order_id = $db->lastInsertId();
 
-    // Decrement stock
     $db->prepare("UPDATE vinyl_records SET stock = stock - 1 WHERE vinyl_id = :id")
        ->execute([':id' => $vinyl_id]);
 
-    // Return fresh chart data for live update
     $rev = $db->prepare("
         SELECT DATE_FORMAT(order_date, '%Y-%m-01') as month, SUM(total_amount) as revenue
         FROM orders WHERE status != 'Cancelled'

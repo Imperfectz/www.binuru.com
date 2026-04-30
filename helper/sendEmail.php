@@ -57,13 +57,11 @@ HTML;
         $mail->setFrom($config['from_email'], $config['from_name']);
         $mail->addAddress($toEmail, $toName);
 
-        // Embed the site logo if present
         $logoPath = __DIR__ . '/../img/biniru_logo.png';
         if (file_exists($logoPath)) {
             try {
                 $mail->addEmbeddedImage($logoPath, 'biniru_logo');
             } catch (Exception $e) {
-                // if embedding fails, continue and the img will be missing
             }
         }
 
