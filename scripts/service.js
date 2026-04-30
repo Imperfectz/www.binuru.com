@@ -179,7 +179,7 @@ function openFunc(userID, fname, lname, uname, email, password) {
 }
 
 /* =====================================================================
-   VINYL FUNCTIONS
+   VINYL FUNCTIONS - AI Assisted
    ===================================================================== */
 
 function previewImage(inputEl, previewId) {
