@@ -38,8 +38,8 @@ function isValidPassword(pw) {
 }
 
 function loginFunc() {
-    const loguname    = document.getElementById("logun").value.trim();
-    const logpassword = document.getElementById("logpass").value;
+    var loguname    = document.getElementById("logun").value.trim();
+    var logpassword = document.getElementById("logpass").value;
 
     if (!loguname || !logpassword) {
         swalDark.fire({ icon: "warning", title: "Missing Fields", text: "Enter both username and password." });
@@ -64,22 +64,35 @@ function loginFunc() {
 }
 
 function addFunc() {
-    const firstName = document.getElementById("fName").value.trim();
-    const lastName  = document.getElementById("lName").value.trim();
-    const userName  = document.getElementById("uName").value.trim();
-    const email     = document.getElementById("email").value.trim();
-    const password  = document.getElementById("password").value;
+    var firstName = document.getElementById("fName").value.trim();
+    var lastName  = document.getElementById("lName").value.trim();
+    var userName  = document.getElementById("uName").value.trim();
+    var email     = document.getElementById("email").value.trim();
+    var password  = document.getElementById("password").value;
 
-    const errors = [];
-    if (!firstName)             errors.push("First name is required.");
-    if (!lastName)              errors.push("Last name is required.");
-    if (!isValidUsername(userName)) errors.push("Username must be 3–50 characters (letters, numbers, underscores only).");
-    if (!isValidEmail(email))   errors.push("Please enter a valid email address.");
-    if (password.length < 8)   errors.push("Password must be at least 8 characters.");
-    else if (!isValidPassword(password)) errors.push("Password must include at least one special character (e.g. !@#$%).");
+    var errors = [];
+    if (!firstName) {
+        errors.push("First name is required.");
+    }
+    if (!lastName) {
+        errors.push("Last name is required.");
+    }
+    if (!isValidUsername(userName)) {
+        errors.push("Username must be 3–50 characters (letters, numbers, underscores only).");
+    }
+    if (!isValidEmail(email)) {
+        errors.push("Please enter a valid email address.");
+    }
+    if (password.length < 8) {
+        errors.push("Password must be at least 8 characters.");
+    } else {
+        if (!isValidPassword(password)) {
+            errors.push("Password must include at least one special character (e.g. !@#$%).");
+        }
+    }
 
     if (errors.length) {
-        swalDark.fire({ icon: "error", title: "Invalid Input", html: errors.map(e => `• ${e}`).join("<br>") });
+        swalDark.fire({ icon: "error", title: "Invalid Input", html: errors.map(function(e){ return '• ' + e; }).join("<br>") });
         return;
     }
 
@@ -102,19 +115,30 @@ function addFunc() {
 }
 
 function updateFunc(userID) {
-    const firstName = document.getElementById("txtfName").value.trim();
-    const lastName  = document.getElementById("txtlName").value.trim();
-    const userName  = document.getElementById("txtuName").value.trim();
-    const email     = document.getElementById("txtemail").value.trim();
-    const password  = document.getElementById("txtpassword").value;
+    var firstName = document.getElementById("txtfName").value.trim();
+    var lastName  = document.getElementById("txtlName").value.trim();
+    var userName  = document.getElementById("txtuName").value.trim();
+    var email     = document.getElementById("txtemail").value.trim();
+    var password  = document.getElementById("txtpassword").value;
 
-    const errors = [];
-    if (!firstName)             errors.push("First name is required.");
-    if (!lastName)              errors.push("Last name is required.");
-    if (!isValidUsername(userName)) errors.push("Username must be 3–50 characters (letters, numbers, underscores only).");
-    if (!isValidEmail(email))   errors.push("Please enter a valid email address.");
-    if (password.length < 8)   errors.push("Password must be at least 8 characters.");
-    else if (!isValidPassword(password)) errors.push("Password must include at least one special character (e.g. !@#$%).");
+    var errors = [];
+    if (!firstName) {
+        errors.push("First name is required.");
+    }
+    if (!lastName) {
+        errors.push("Last name is required.");
+    }
+    if (!isValidUsername(userName)) {
+        errors.push("Username must be 3–50 characters (letters, numbers, underscores only).");
+    }
+    if (!isValidEmail(email)) {
+        errors.push("Please enter a valid email address.");
+    }
+    if (password.length < 8) {
+        errors.push("Password must be at least 8 characters.");
+    } else if (!isValidPassword(password)) {
+        errors.push("Password must include at least one special character (e.g. !@#$%).");
+    }
 
     if (errors.length) {
         swalDark.fire({ icon: "error", title: "Invalid Input", html: errors.map(e => `• ${e}`).join("<br>") });
@@ -247,7 +271,6 @@ function addVinylFunc() {
         return;
     }
 
-    // Build FormData to support file uploads
     const formData = new FormData();
     formData.append("v_title",  title.trim());
     formData.append("v_artist", artist);
