@@ -11,15 +11,17 @@ class Artist
 
     public function getAll()
     {
-        $stmt = $this->conn->prepare("SELECT * FROM artists ORDER BY artist_name");
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $query = "SELECT * FROM artists ORDER BY artist_name";
+        $response = $this->conn->prepare($query);
+        $response->execute();
+        return $response->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function create($name)
     {
-        $stmt = $this->conn->prepare("INSERT INTO artists (artist_name) VALUES (:name)");
-        $stmt->bindParam(':name', $name);
-        return $stmt->execute() ? $this->conn->lastInsertId() : false;
+        $query = "INSERT INTO artists (artist_name) VALUES (:name)";
+        $response = $this->conn->prepare($query);
+        $response->bindParam(':name', $name);
+        return $response->execute() ? $this->conn->lastInsertId() : false;
     }
 }
