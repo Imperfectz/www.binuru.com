@@ -85,11 +85,11 @@ class Registration
         return $response->execute();
     }
 
-    public function loginRegistration($uName, $password)
+    public function loginRegistration($email, $password)
     {
-        $query = "SELECT * FROM users_tbl WHERE userName = :userName LIMIT 1";
+        $query = "SELECT * FROM users_tbl WHERE email = :email LIMIT 1";
         $response = $this->conn->prepare($query);
-        $response->bindParam(':userName', $uName);
+        $response->bindParam(':email', $email);
         $response->execute();
 
         $user = $response->fetch(PDO::FETCH_ASSOC);
