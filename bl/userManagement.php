@@ -22,6 +22,14 @@ class UserManagement
     public function addUserFunc($fName, $lName, $uName, $email, $password)
     {
         try {
+            if ($this->regsMode1->emailExists($email)) {
+                echo "Email is already registered.";
+                return;
+            }
+            if ($this->regsMode1->usernameExists($uName)) {
+                echo "Username is already taken.";
+                return;
+            }
             if ($this->regsMode1->createRegistration($fName, $lName, $uName, $email, $password)) {
                 echo "true";
             } else {
@@ -64,10 +72,18 @@ class UserManagement
         }
     }
 
-    public function loginFunc($luname, $lpass)
+    public function loginFunc($email, $password)
     {
         try {
-            if ($this->regsMode1->loginRegistration($luname, $lpass)) {
+            $user = $this->regsMode1->loginRegistration($email, $password);
+
+            if ($user) {
+                $_SESSION['userID']    = $user['userID'];
+                $_SESSION['userName']  = $user['userName'];
+                $_SESSION['email']     = $user['email'];
+                $_SESSION['firstName'] = $user['firstName'];
+                $_SESSION['lastName']  = $user['lastName'];
+                $_SESSION['is_admin']  = (bool)$user['is_admin'];
                 echo "true";
             } else {
                 echo "false";

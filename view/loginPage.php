@@ -32,6 +32,10 @@
         .field input{width:100%;background:#111;border:1px solid var(--border);color:var(--white);padding:12px 16px;border-radius:3px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s}
         .field input:focus{border-color:#3a3a3a}
         .field input::placeholder{color:#333}
+        /* Real-time validation states */
+        .field input.is-error{border-color:#ff3c3c!important;box-shadow:0 0 0 3px rgba(255,60,60,.13);}
+        .field input.is-valid{border-color:#7df3c0!important;}
+        .field-hint{font-size:10px;color:#ff3c3c;letter-spacing:.5px;margin-top:5px;display:none;line-height:1.4;}
         .btn-login{width:100%;padding:14px;background:var(--accent);color:var(--black);border:none;border-radius:3px;font-size:12px;font-weight:700;letter-spacing:4px;text-transform:uppercase;cursor:pointer;transition:.2s;margin-top:8px}
         .btn-login:hover{background:#ffe900;transform:translateY(-2px);box-shadow:0 8px 20px rgba(245,230,66,0.2)}
         .card-footer{padding:16px 36px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--muted)}
@@ -54,12 +58,14 @@
             <div class="card-body">
                 <p class="card-title">SIGN IN</p>
                 <div class="field">
-                    <label>Username</label>
-                    <input id="logun" type="text" placeholder="your username">
+                    <label>Email</label>
+                    <input id="logemail" type="email" placeholder="your@email.com">
+                    <span class="field-hint"></span>
                 </div>
                 <div class="field">
                     <label>Password</label>
                     <input id="logpass" type="password" placeholder="••••••••">
+                    <span class="field-hint"></span>
                 </div>
                 <button class="btn-login" onclick="loginFunc()">Login →</button>
             </div>

@@ -1,14 +1,14 @@
 
 const swalDark = Swal.mixin({
-    background:        '#1a1a2e',
-    color:             '#e0e0e0',
-    confirmButtonColor:'#7c3aed',
+    background:        '#1a1a1a',
+    color:             '#f0ede8',
+    confirmButtonColor:'#f5e642',
     cancelButtonColor: '#374151',
     customClass: {
-        popup:          'swal-dark-popup',
-        title:          'swal-dark-title',
-        confirmButton:  'swal-dark-confirm',
-        cancelButton:   'swal-dark-cancel'
+        popup:         'swal-dark-popup',
+        title:         'swal-dark-title',
+        confirmButton: 'swal-dark-confirm',
+        cancelButton:  'swal-dark-cancel'
     }
 });
 
@@ -22,7 +22,6 @@ function redirectFunc(redirectID) {
     if (pages[redirectID]) window.location.href = pages[redirectID];
 }
 
-
 function isValidEmail(email) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
@@ -33,28 +32,125 @@ function isValidUsername(uname) {
 
 function isValidPassword(pw) {
     if (!pw) return false;
-    const special = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>\/?`~]/;
+    const special = /[!@#$%^&*()\-_=+[\]{};':"\\|,.<>/?`~]/;
     return special.test(pw);
 }
 
-function loginFunc() {
-    var loguname    = document.getElementById("logun").value.trim();
-    var logpassword = document.getElementById("logpass").value;
+function setFieldError(inputEl, msg) {
+    inputEl.classList.add('is-error');
+    inputEl.classList.remove('is-valid');
+    const hint = inputEl.parentElement && inputEl.parentElement.querySelector('.field-hint');
+    if (hint) { hint.textContent = msg; hint.style.display = 'block'; }
+}
 
-    if (!loguname || !logpassword) {
-        swalDark.fire({ icon: "warning", title: "Missing Fields", text: "Enter both username and password." });
-        return;
+function clearFieldError(inputEl) {
+    inputEl.classList.remove('is-error');
+    const hint = inputEl.parentElement && inputEl.parentElement.querySelector('.field-hint');
+    if (hint) hint.style.display = 'none';
+}
+
+function markValid(inputEl) {
+    inputEl.classList.remove('is-error');
+    inputEl.classList.add('is-valid');
+    const hint = inputEl.parentElement && inputEl.parentElement.querySelector('.field-hint');
+    if (hint) hint.style.display = 'none';
+}
+
+function validateField(inputEl, rules) {
+    const val = inputEl.value;
+    for (const { test, msg } of rules) {
+        if (!test(val)) { setFieldError(inputEl, msg); return false; }
     }
+    markValid(inputEl);
+    return true;
+}
+
+$(document).ready(function () {
+
+    const logEmail = document.getElementById('logemail');
+    const logPass  = document.getElementById('logpass');
+    if (logEmail) {
+        logEmail.addEventListener('blur', function () {
+            if (!this.value.trim()) {
+                setFieldError(this, 'Email is required.');
+            } else if (!isValidEmail(this.value)) {
+                setFieldError(this, 'Enter a valid email address.');
+            } else {
+                clearFieldError(this);
+            }
+        });
+        logEmail.addEventListener('input', function () {
+            if (this.classList.contains('is-error') && isValidEmail(this.value)) clearFieldError(this);
+        });
+    }
+    if (logPass) {
+        logPass.addEventListener('blur', function () {
+            if (!this.value) setFieldError(this, 'Password is required.');
+            else clearFieldError(this);
+        });
+        logPass.addEventListener('input', function () {
+            if (this.classList.contains('is-error') && this.value) clearFieldError(this);
+        });
+    }
+
+    const fields = {
+        fName:    [{ test: v => v.trim().length > 0,     msg: 'First name is required.' }],
+        lName:    [{ test: v => v.trim().length > 0,     msg: 'Last name is required.' }],
+        uName:    [{ test: v => isValidUsername(v),       msg: 'Username: 3–50 chars, letters/numbers/_ only.' }],
+        email:    [{ test: v => isValidEmail(v),          msg: 'Enter a valid email address.' }],
+        password: [
+            { test: v => v.length >= 8,                  msg: 'Password must be at least 8 characters.' },
+            { test: v => isValidPassword(v),             msg: 'Include at least one special character (!@#$%…).' }
+        ]
+    };
+
+    Object.entries(fields).forEach(([id, rules]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('blur', function () {
+            for (const { test, msg } of rules) {
+                if (!test(this.value)) { setFieldError(this, msg); return; }
+            }
+            clearFieldError(this);
+        });
+        el.addEventListener('input', function () {
+            if (!this.classList.contains('is-error')) return;
+            const allPass = rules.every(({ test }) => test(this.value));
+            if (allPass) clearFieldError(this);
+        });
+    });
+
+    // DataTable
+    if ($('#myTable').length) $('#myTable').DataTable();
+});
+
+function loginFunc() {
+    const emailEl = document.getElementById("logemail");
+    const passEl  = document.getElementById("logpass");
+    const logemail    = emailEl.value.trim();
+    const logpassword = passEl.value;
+
+    let ok = true;
+    if (!logemail) { setFieldError(emailEl, 'Email is required.'); ok = false; }
+    else if (!isValidEmail(logemail)) { setFieldError(emailEl, 'Enter a valid email address.'); ok = false; }
+    else clearFieldError(emailEl);
+
+    if (!logpassword) { setFieldError(passEl, 'Password is required.'); ok = false; }
+    else clearFieldError(passEl);
+
+    if (!ok) return;
 
     $.ajax({
         url:  "../controllers/userController.php",
         type: "POST",
-        data: { luname: loguname, lpass: logpassword },
+        data: { lemail: logemail, lpass: logpassword },
         success: function (returnedData) {
             if (returnedData == "true") {
                 redirectFunc(1);
             } else {
-                swalDark.fire({ icon: "error", title: "Login Failed", text: "Wrong username or password." });
+                setFieldError(emailEl, ' ');
+                setFieldError(passEl, 'Wrong email or password.');
+                swalDark.fire({ icon: "error", title: "Login Failed", text: "Wrong email or password." });
             }
         },
         error: function (xhr) {
@@ -64,48 +160,56 @@ function loginFunc() {
 }
 
 function addFunc() {
-    var firstName = document.getElementById("fName").value.trim();
-    var lastName  = document.getElementById("lName").value.trim();
-    var userName  = document.getElementById("uName").value.trim();
-    var email     = document.getElementById("email").value.trim();
-    var password  = document.getElementById("password").value;
+    const fNameEl = document.getElementById("fName");
+    const lNameEl = document.getElementById("lName");
+    const uNameEl = document.getElementById("uName");
+    const emailEl = document.getElementById("email");
+    const passEl  = document.getElementById("password");
 
-    var errors = [];
-    if (!firstName) {
-        errors.push("First name is required.");
-    }
-    if (!lastName) {
-        errors.push("Last name is required.");
-    }
+    const firstName = fNameEl.value.trim();
+    const lastName  = lNameEl.value.trim();
+    const userName  = uNameEl.value.trim();
+    const email     = emailEl.value.trim();
+    const password  = passEl.value;
+
+    let ok = true;
+
+    if (!firstName) { setFieldError(fNameEl, 'First name is required.'); ok = false; } else clearFieldError(fNameEl);
+    if (!lastName)  { setFieldError(lNameEl, 'Last name is required.');  ok = false; } else clearFieldError(lNameEl);
+
     if (!isValidUsername(userName)) {
-        errors.push("Username must be 3–50 characters (letters, numbers, underscores only).");
-    }
-    if (!isValidEmail(email)) {
-        errors.push("Please enter a valid email address.");
-    }
-    if (password.length < 8) {
-        errors.push("Password must be at least 8 characters.");
-    } else {
-        if (!isValidPassword(password)) {
-            errors.push("Password must include at least one special character (e.g. !@#$%).");
-        }
-    }
+        setFieldError(uNameEl, 'Username: 3–50 chars, letters/numbers/_ only.');
+        ok = false;
+    } else clearFieldError(uNameEl);
 
-    if (errors.length) {
-        swalDark.fire({ icon: "error", title: "Invalid Input", html: errors.map(function(e){ return '• ' + e; }).join("<br>") });
-        return;
-    }
+    if (!isValidEmail(email)) {
+        setFieldError(emailEl, 'Enter a valid email address.');
+        ok = false;
+    } else clearFieldError(emailEl);
+
+    if (password.length < 8) {
+        setFieldError(passEl, 'Password must be at least 8 characters.');
+        ok = false;
+    } else if (!isValidPassword(password)) {
+        setFieldError(passEl, 'Include at least one special character (!@#$%…).');
+        ok = false;
+    } else clearFieldError(passEl);
+
+    if (!ok) return;
 
     $.ajax({
         url:  "../controllers/userController.php",
         type: "POST",
         data: { fName: firstName, lName: lastName, uName: userName, email, password },
         success: function (returnedData) {
-            if (returnedData == "true") {
+            if (returnedData.trim() == "true") {
                 swalDark.fire({ icon: "success", title: "Registered!", text: "Your account has been created. You can now log in." })
                     .then(() => redirectFunc(2));
             } else {
-                swalDark.fire({ icon: "error", title: "Failed", text: "Registration failed: [" + returnedData + "]" });
+                // Show server-side message (e.g. email already in use)
+                swalDark.fire({ icon: "error", title: "Registration Failed", text: returnedData });
+                if (returnedData.includes('Email')) setFieldError(emailEl, returnedData);
+                if (returnedData.includes('Username')) setFieldError(uNameEl, returnedData);
             }
         },
         error: function (xhr) {
@@ -119,25 +223,20 @@ function updateFunc(userID) {
     var lastName  = document.getElementById("txtlName").value.trim();
     var userName  = document.getElementById("txtuName").value.trim();
     var email     = document.getElementById("txtemail").value.trim();
-    var password  = document.getElementById("txtpassword").value;
+    var password  = document.getElementById("txtpassword").value;  
 
     var errors = [];
-    if (!firstName) {
-        errors.push("First name is required.");
-    }
-    if (!lastName) {
-        errors.push("Last name is required.");
-    }
-    if (!isValidUsername(userName)) {
-        errors.push("Username must be 3–50 characters (letters, numbers, underscores only).");
-    }
-    if (!isValidEmail(email)) {
-        errors.push("Please enter a valid email address.");
-    }
-    if (password.length < 8) {
-        errors.push("Password must be at least 8 characters.");
-    } else if (!isValidPassword(password)) {
-        errors.push("Password must include at least one special character (e.g. !@#$%).");
+    if (!firstName) errors.push("First name is required.");
+    if (!lastName)  errors.push("Last name is required.");
+    if (!isValidUsername(userName)) errors.push("Username must be 3–50 characters (letters, numbers, underscores only).");
+    if (!isValidEmail(email)) errors.push("Please enter a valid email address.");
+
+    if (password.length > 0) {
+        if (password.length < 8) {
+            errors.push("New password must be at least 8 characters.");
+        } else if (!isValidPassword(password)) {
+            errors.push("New password must include at least one special character (e.g. !@#$%).");
+        }
     }
 
     if (errors.length) {
@@ -148,10 +247,13 @@ function updateFunc(userID) {
     swalDark.fire({ title: "Save changes?", icon: "question", showCancelButton: true, confirmButtonText: "Save" })
         .then((result) => {
             if (result.isConfirmed) {
+                var postData = { ufName: firstName, ulName: lastName, uuName: userName, uemail: email, uid: userID };
+                if (password.length > 0) postData.upassword = password;
+
                 $.ajax({
                     url:  "../controllers/userController.php",
                     type: "POST",
-                    data: { ufName: firstName, ulName: lastName, uuName: userName, uemail: email, upassword: password, uid: userID },
+                    data: postData,
                     success: function (returnedData) {
                         if (returnedData == "true") {
                             swalDark.fire("Updated!", "", "success").then(() => location.reload(true));
@@ -221,7 +323,6 @@ function previewImage(inputEl, previewId) {
 
     if (!file) { preview.style.display = 'none'; preview.src = ''; return; }
 
-    // Client-side type check
     const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     if (!allowed.includes(file.type)) {
         swalDark.fire({ icon: 'warning', title: 'Invalid File', text: 'Only JPEG, PNG, WEBP, or GIF images are allowed.' });
@@ -406,8 +507,4 @@ function deleteVinylFunc(vinylId) {
     });
 }
 
-// DATA TABLE
 
-$(document).ready(function () {
-    if ($('#myTable').length) $('#myTable').DataTable();
-});

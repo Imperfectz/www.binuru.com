@@ -4,6 +4,9 @@ header('Content-Type: application/json');
 
 require_once '../model/database.php';
 
+
+// Order processing AI assisted //
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['success' => false, 'message' => 'Method not allowed']);
@@ -25,8 +28,7 @@ try {
     $database = new Database();
     $db = $database->connect();
 
-    // Check stock
-    $stmt = $db->prepare("SELECT stock FROM vinyl_records WHERE vinyl_id = :id");
+    $stmt = $db->prepare("SELECT stock FROM vinyl_records_tbl WHERE vinyl_id = :id");
     $stmt->execute([':id' => $vinyl_id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -36,18 +38,18 @@ try {
     }
 
     $stmt = $db->prepare("
-        INSERT INTO orders (userID, total_amount, status, order_date)
+        INSERT INTO orders_tbl (userID, total_amount, status, order_date)
         VALUES (:userID, :total, 'Pending', NOW())
     ");
     $stmt->execute([':userID' => $userID, ':total' => $total]);
     $order_id = $db->lastInsertId();
 
-    $db->prepare("UPDATE vinyl_records SET stock = stock - 1 WHERE vinyl_id = :id")
+    $db->prepare("UPDATE vinyl_records_tbl SET stock = stock - 1 WHERE vinyl_id = :id")
        ->execute([':id' => $vinyl_id]);
 
     $rev = $db->prepare("
         SELECT DATE_FORMAT(order_date, '%Y-%m-01') as month, SUM(total_amount) as revenue
-        FROM orders WHERE status != 'Cancelled'
+        FROM orders_tbl WHERE status != 'Cancelled'
         AND order_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
         GROUP BY DATE_FORMAT(order_date, '%Y-%m-01') ORDER BY month ASC
     ");
@@ -56,19 +58,19 @@ try {
 
     $ord = $db->prepare("
         SELECT DATE_FORMAT(order_date, '%Y-%m-01') as month, COUNT(*) as count
-        FROM orders
+        FROM orders_tbl
         WHERE order_date >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
         GROUP BY DATE_FORMAT(order_date, '%Y-%m-01') ORDER BY month ASC
     ");
     $ord->execute();
     $ordRows = $ord->fetchAll(PDO::FETCH_ASSOC);
 
-    $status = $db->prepare("SELECT status, COUNT(*) as count FROM orders GROUP BY status");
+    $status = $db->prepare("SELECT status, COUNT(*) as count FROM orders_tbl GROUP BY status");
     $status->execute();
     $statusRows = $status->fetchAll(PDO::FETCH_ASSOC);
 
-    $totalRevenue = $db->query("SELECT SUM(total_amount) FROM orders WHERE status != 'Cancelled'")->fetchColumn();
-    $totalOrders  = $db->query("SELECT COUNT(*) FROM orders")->fetchColumn();
+    $totalRevenue = $db->query("SELECT SUM(total_amount) FROM orders_tbl WHERE status != 'Cancelled'")->fetchColumn();
+    $totalOrders  = $db->query("SELECT COUNT(*) FROM orders_tbl")->fetchColumn();
 
     echo json_encode([
         'success'      => true,

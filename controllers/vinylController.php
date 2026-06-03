@@ -1,5 +1,4 @@
 <?php
-
 session_start();
 require_once '../bl/vinylManagement.php';
 
@@ -8,7 +7,6 @@ $vm = new VinylManagement();
 /* Viny Detail animation - AI assisted*/
 function handleImageUpload($fieldName, $subDir)
 {
-    // No file selected for this field — skip silently
     if (!isset($_FILES[$fieldName]) || $_FILES[$fieldName]['error'] === UPLOAD_ERR_NO_FILE || empty($_FILES[$fieldName]['name'])) {
         return null;
     }
@@ -23,7 +21,6 @@ function handleImageUpload($fieldName, $subDir)
         exit;
     }
 
-    // Use finfo if available, fall back to mime_content_type
     if (function_exists('finfo_open')) {
         $finfo    = finfo_open(FILEINFO_MIME_TYPE);
         $mimeType = finfo_file($finfo, $file['tmp_name']);
@@ -44,9 +41,7 @@ function handleImageUpload($fieldName, $subDir)
         exit;
     }
 
-    // Build upload directory path (works on Windows & Linux)
     $uploadDir = rtrim(str_replace('\\', '/', realpath(__DIR__ . '/..')), '/') . '/uploads/' . $subDir . '/';
-
     if (!is_dir($uploadDir)) {
         if (!mkdir($uploadDir, 0755, true)) {
             http_response_code(500);
@@ -72,11 +67,18 @@ function handleImageUpload($fieldName, $subDir)
     }
 
     return 'uploads/' . $subDir . '/' . $filename;
+} // <-- FIX: This closing brace was missing!
+
+
+if (isset($_GET['action']) && $_GET['action'] === 'chartData') {
+    header('Content-Type: application/json');
+    $period = in_array($_GET['period'] ?? '6', ['3','6','12','ytd','all']) ? $_GET['period'] : '6';
+    echo json_encode($vm->getChartData($period));
+    exit;
 }
 
-
-if (isset($_POST['v_title'], $_POST['v_price'], $_POST['v_stock'])) {
-
+// --- Vinyl Insert/Update Action ---
+if (isset($_POST['v_title'])) {
     $id     = isset($_POST['v_id']) && $_POST['v_id'] !== '' ? (int)$_POST['v_id'] : null;
     $title  = trim($_POST['v_title']);
     $artist = !empty($_POST['v_artist']) ? (int)$_POST['v_artist'] : null;
@@ -85,7 +87,7 @@ if (isset($_POST['v_title'], $_POST['v_price'], $_POST['v_stock'])) {
     $stock  = (int)$_POST['v_stock'];
     $year   = !empty($_POST['v_year'])   ? (int)$_POST['v_year']   : null;
     $desc   = trim($_POST['v_desc'] ?? '');
-
+    
     // ---validation AI assisted --- // 
     $errors = [];
     if ($title === '')  $errors[] = 'Title is required.';
@@ -103,7 +105,7 @@ if (isset($_POST['v_title'], $_POST['v_price'], $_POST['v_stock'])) {
 
     $coverImage = handleImageUpload('v_cover_image', 'covers');
     $vinylImage = handleImageUpload('v_vinyl_image', 'vinyls');
-
+    
     if ($id) {
         $vm->editVinyl($id, $title, $artist, $genre, $price, $stock, $year, $desc, $coverImage, $vinylImage);
     } else {
@@ -112,17 +114,15 @@ if (isset($_POST['v_title'], $_POST['v_price'], $_POST['v_stock'])) {
     exit;
 }
 
-
+// --- Vinyl Delete Action ---
 if (isset($_POST['v_delete_id'])) {
     $vm->removeVinyl((int)$_POST['v_delete_id']);
     exit;
 }
 
- /* Update order status ai assisted */
-
+// --- Update Order Status AI assisted ---
 if (isset($_SERVER['HTTP_X_ACTION']) && $_SERVER['HTTP_X_ACTION'] === 'updateOrderStatus') {
     header('Content-Type: application/json');
-
     $input    = json_decode(file_get_contents('php://input'), true);
     $order_id = isset($input['order_id']) ? (int)$input['order_id'] : 0;
     $status   = isset($input['status'])   ? $input['status']        : '';
@@ -138,14 +138,14 @@ if (isset($_SERVER['HTTP_X_ACTION']) && $_SERVER['HTTP_X_ACTION'] === 'updateOrd
         $database = new Database();
         $db = $database->connect();
 
-        $db->prepare("UPDATE orders SET status = :status WHERE order_id = :id")
+        $db->prepare("UPDATE orders_tbl SET status = :status WHERE order_id = :id")
            ->execute([':status' => $status, ':id' => $order_id]);
-
-        $statusRows   = $db->query("SELECT status, COUNT(*) as count FROM orders GROUP BY status")
+           
+        $statusRows   = $db->query("SELECT status, COUNT(*) as count FROM orders_tbl GROUP BY status")
                            ->fetchAll(PDO::FETCH_ASSOC);
-        $totalRevenue = $db->query("SELECT SUM(total_amount) FROM orders WHERE status != 'Cancelled'")
+        $totalRevenue = $db->query("SELECT SUM(total_amount) FROM orders_tbl WHERE status != 'Cancelled'")
                            ->fetchColumn();
-
+                           
         echo json_encode([
             'success'      => true,
             'statusRows'   => $statusRows,

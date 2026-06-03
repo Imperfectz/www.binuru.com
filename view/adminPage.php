@@ -541,7 +541,7 @@ $genres  = $vm->getGenres();
                                     <td style="color:var(--muted)">@<?= htmlspecialchars($u['userName']) ?></td>
                                     <td style="color:var(--muted)"><?= htmlspecialchars($u['email'])    ?></td>
                                     <td>
-                                        <button class="btn-edit" onclick="openUserModal(<?= $u['userID'] ?>,'<?= htmlspecialchars($u['firstName'], ENT_QUOTES) ?>','<?= htmlspecialchars($u['lastName'], ENT_QUOTES) ?>','<?= htmlspecialchars($u['userName'], ENT_QUOTES) ?>','<?= htmlspecialchars($u['email'], ENT_QUOTES) ?>','<?= htmlspecialchars($u['password'], ENT_QUOTES) ?>')">Edit</button>
+                                        <button class="btn-edit" onclick="openUserModal(<?= $u['userID'] ?>,'<?= htmlspecialchars($u['firstName'], ENT_QUOTES) ?>','<?= htmlspecialchars($u['lastName'], ENT_QUOTES) ?>','<?= htmlspecialchars($u['userName'], ENT_QUOTES) ?>','<?= htmlspecialchars($u['email'], ENT_QUOTES) ?>')">Edit</button>
                                         <button class="btn-delete" onclick="deleteFunc(<?= $u['userID'] ?>)">Delete</button>
                                     </td>
                                 </tr>
@@ -617,7 +617,7 @@ $genres  = $vm->getGenres();
             </div>
             <div class="field"><label>Username</label><input id="txtuName" type="text"></div>
             <div class="field"><label>Email</label><input id="txtemail" type="email"></div>
-            <div class="field"><label>Password</label><input id="txtpassword" type="text"></div>
+            <div class="field"><label>New Password <span style="color:var(--muted);font-size:9px;letter-spacing:1px">(leave blank to keep current)</span></label><input id="txtpassword" type="password" placeholder="Enter new password…"></div>
             <button id="btnSave" class="btn-save">Save Changes</button>
         </div>
     </div>
@@ -699,12 +699,12 @@ $genres  = $vm->getGenres();
         });
 
         // USER MODAL
-        function openUserModal(uid, fn, ln, un, em, pw) {
+        function openUserModal(uid, fn, ln, un, em) {
             document.getElementById('txtfName').value = fn;
             document.getElementById('txtlName').value = ln;
             document.getElementById('txtuName').value = un;
             document.getElementById('txtemail').value = em;
-            document.getElementById('txtpassword').value = pw;
+            document.getElementById('txtpassword').value = ''; // always blank — never prefill hash
             document.getElementById('btnSave').setAttribute('onclick', 'updateFunc(' + uid + ')');
             document.getElementById('userModal').style.display = 'flex';
         }

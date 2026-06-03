@@ -1,5 +1,4 @@
 <?php
-// TEMPORARY DEBUG — delete after fixing
 header('Content-Type: text/plain');
 echo "=== POST ===\n";
 print_r($_POST);
@@ -15,3 +14,6 @@ $dir = __DIR__ . '/../uploads/covers/';
 echo "Path: $dir\n";
 echo "Exists: " . (is_dir($dir) ? 'yes' : 'no') . "\n";
 echo "Writable: " . (is_writable(dirname($dir)) ? 'yes' : 'no') . "\n";
+
+
+// File upload handling //

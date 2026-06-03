@@ -33,6 +33,10 @@
         .field input{width:100%;background:#111;border:1px solid var(--border);color:var(--white);padding:11px 14px;border-radius:3px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s}
         .field input:focus{border-color:#444}
         .field input::placeholder{color:#333}
+        /* Real-time validation states */
+        .field input.is-error{border-color:#ff3c3c!important;box-shadow:0 0 0 3px rgba(255,60,60,.13);}
+        .field input.is-valid{border-color:#7df3c0!important;}
+        .field-hint{font-size:10px;color:#ff3c3c;letter-spacing:.5px;margin-top:5px;display:none;line-height:1.4;}
         .btn-signup{width:100%;padding:13px;background:var(--accent);color:var(--black);border:none;border-radius:3px;font-size:12px;font-weight:700;letter-spacing:3px;text-transform:uppercase;cursor:pointer;transition:.2s;margin-top:4px}
         .btn-signup:hover{background:#ffe900;transform:translateY(-1px)}
         .box-footer{padding:16px 32px;border-top:1px solid var(--border);text-align:center;font-size:12px;color:var(--muted)}
@@ -62,12 +66,12 @@
             </div>
             <div class="box-body">
                 <div class="field-row">
-                    <div class="field"><label>First Name</label><input id="fName" type="text" placeholder="Juan" maxlength="50"></div>
-                    <div class="field"><label>Last Name</label><input id="lName" type="text" placeholder="Dela Cruz" maxlength="50"></div>
+                    <div class="field"><label>First Name</label><input id="fName" type="text" placeholder="Juan" maxlength="50"><span class="field-hint"></span></div>
+                    <div class="field"><label>Last Name</label><input id="lName" type="text" placeholder="Dela Cruz" maxlength="50"><span class="field-hint"></span></div>
                 </div>
-                <div class="field"><label>Username</label><input id="uName" type="text" placeholder="juanrecords" maxlength="50"></div>
-                <div class="field"><label>Email</label><input id="email" type="email" placeholder="juan@email.com" maxlength="100"></div>
-                <div class="field"><label>Password</label><input id="password" type="password" placeholder="••••••••" maxlength="100"></div>
+                <div class="field"><label>Username</label><input id="uName" type="text" placeholder="juanrecords" maxlength="50"><span class="field-hint"></span></div>
+                <div class="field"><label>Email</label><input id="email" type="email" placeholder="juan@email.com" maxlength="100"><span class="field-hint"></span></div>
+                <div class="field"><label>Password</label><input id="password" type="password" placeholder="••••••••" maxlength="100"><span class="field-hint"></span></div>
                 <button class="btn-signup" onclick="addFunc()">Create Account →</button>
             </div>
             <div class="box-footer">

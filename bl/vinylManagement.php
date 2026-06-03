@@ -34,6 +34,7 @@ class VinylManagement
     public function getRevenueByMonth($months = 6) { return $this->orderModel->getRevenueByMonth($months); }
     public function getOrderStatusDistribution() { return $this->orderModel->getOrderStatusDistribution(); }
     public function getOrdersByMonth($months = 6) { return $this->orderModel->getOrdersByMonth($months); }
+    public function getChartData($period = '6') { return $this->orderModel->getChartData($period); }
 
     public function addVinyl($title, $artist_id, $genre_id, $price, $stock, $year, $desc, $cover_image = null, $vinyl_image = null)
     {

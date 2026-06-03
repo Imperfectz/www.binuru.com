@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<?php session_start(); $isAdmin = !empty($_SESSION['is_admin']); ?>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -248,8 +249,10 @@
         </a>
         <div class="nav-links">
             <a href="productsPage.php">Records</a>
+            <?php if ($isAdmin): ?>
             <a href="Dashboard.php">Dashboard</a>
             <a href="adminPage.php">Admin</a>
+            <?php endif; ?>
             <a href="loginPage.php" class="nav-cta">Logout</a>
         </div>
     </nav>

@@ -1,5 +1,6 @@
 <?php
 session_start();
+$isAdmin = !empty($_SESSION['is_admin']);
 require_once '../bl/vinylManagement.php';
 
 $vm = new VinylManagement();
@@ -289,8 +290,10 @@ $price     = '₱' . number_format($vinyl['price'], 2);
         </a>
         <div class="nav-links">
             <a href="productsPage.php">Records</a>
+            <?php if ($isAdmin): ?>
             <a href="Dashboard.php">Dashboard</a>
             <a href="adminPage.php">Admin</a>
+            <?php endif; ?>
             <a href="loginPage.php" class="nav-cta">Logout</a>
         </div>
     </nav>

@@ -1,5 +1,9 @@
 <?php
 session_start();
+if (empty($_SESSION['is_admin'])) {
+    header('Location: homePage.php');
+    exit;
+}
 require_once '../bl/userManagement.php';
 require_once '../bl/vinylManagement.php';
 
@@ -13,20 +17,19 @@ $orderCount = $vm->countOrders();
 $revenue    = $vm->totalRevenue();
 
 $revenueByMonth = $vm->getRevenueByMonth(6);
-$ordersByMonth = $vm->getOrdersByMonth(6);
-$orderStatuses = $vm->getOrderStatusDistribution();
+$ordersByMonth  = $vm->getOrdersByMonth(6);
+$orderStatuses  = $vm->getOrderStatusDistribution();
 
 $monthLabels = [];
 $revenueData = [];
-$orderData = [];
+$orderData   = [];
 
-foreach ($revenueByMonth as $data) {
-    $monthLabels[] = date('M', strtotime($data['month']));
-    $revenueData[] = (int)$data['revenue'];
+foreach ($revenueByMonth as $d) {
+    $monthLabels[] = date('M', strtotime($d['month']));
+    $revenueData[] = (int)$d['revenue'];
 }
-
-foreach ($ordersByMonth as $data) {
-    $orderData[] = (int)$data['count'];
+foreach ($ordersByMonth as $d) {
+    $orderData[] = (int)$d['count'];
 }
 
 while (count($monthLabels) < 6) {
@@ -38,18 +41,17 @@ while (count($monthLabels) < 6) {
 $statusLabels = [];
 $statusCounts = [];
 $statusColors = [];
-foreach ($orderStatuses as $status) {
-    $statusLabels[] = $status['status'];
-    $statusCounts[] = (int)$status['count'];
-    switch($status['status']) {
+foreach ($orderStatuses as $s) {
+    $statusLabels[] = $s['status'];
+    $statusCounts[] = (int)$s['count'];
+    switch($s['status']) {
         case 'Completed': $statusColors[] = '#7df3c0'; break;
-        case 'Shipped': $statusColors[] = '#f5e642'; break;
+        case 'Shipped':   $statusColors[] = '#f5e642'; break;
         case 'Cancelled': $statusColors[] = '#ff3c3c'; break;
-        default: $statusColors[] = '#888';
+        default:          $statusColors[] = '#888';
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -64,9 +66,10 @@ foreach ($orderStatuses as $status) {
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
         html,body{background:var(--black);color:var(--white);font-family:'DM Sans',sans-serif;min-height:100%;}
 
+        /* NAV */
         .navbar{position:sticky;top:0;z-index:100;background:rgba(13,13,13,0.95);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 48px;height:62px;display:flex;align-items:center;justify-content:space-between;}
         .nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
-        .nav-logo img{height:30px;width:30px;object-fit:contain;filter:brightness(1.2);} 
+        .nav-logo img{height:30px;width:30px;object-fit:contain;}
         .nav-logo-text{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:5px;color:var(--white);}
         .nav-links{display:flex;align-items:center;gap:28px;}
         .nav-links a{color:var(--muted);text-decoration:none;font-size:11px;letter-spacing:2px;text-transform:uppercase;transition:color .2s;}
@@ -81,34 +84,43 @@ foreach ($orderStatuses as $status) {
         .page-header p{font-size:13px;color:var(--muted);margin-top:4px;}
 
         .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:5px;overflow:hidden;margin-bottom:48px;}
-        .stat-card{background:var(--card);padding:28px 28px 24px;position:relative;overflow:hidden;transition:background .2s;}
-        .stat-card:hover{background:#202020;}
+        .stat-card{background:var(--card);padding:28px 28px 24px;position:relative;overflow:hidden;}
         .stat-top-bar{position:absolute;top:0;left:0;right:0;height:2px;}
         .stat-card:nth-child(1) .stat-top-bar{background:var(--accent);}
         .stat-card:nth-child(2) .stat-top-bar{background:var(--accent2);}
         .stat-card:nth-child(3) .stat-top-bar{background:var(--accent3);}
         .stat-card:nth-child(4) .stat-top-bar{background:#a78bfa;}
         .stat-label{font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--muted);margin-bottom:16px;}
-        .stat-value{font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:2px;line-height:1;color:var(--white);margin-bottom:4px;}
+        .stat-value{font-family:'Bebas Neue',sans-serif;font-size:52px;letter-spacing:2px;line-height:1;margin-bottom:4px;}
         .stat-card:nth-child(1) .stat-value{color:var(--accent);}
         .stat-card:nth-child(2) .stat-value{color:var(--accent2);}
         .stat-card:nth-child(3) .stat-value{color:var(--accent3);}
         .stat-card:nth-child(4) .stat-value{color:#a78bfa;}
-        .stat-sub{font-size:11px;color:var(--muted);letter-spacing:.5px;}
-
-        /* decorative mini disc */
+        .stat-sub{font-size:11px;color:var(--muted);}
         .disc-deco{position:absolute;right:-16px;bottom:-16px;width:72px;height:72px;border-radius:50%;opacity:.06;background:conic-gradient(#fff 0deg,rgba(255,255,255,.4) 60deg,#fff 120deg,rgba(255,255,255,.4) 180deg,#fff 240deg,rgba(255,255,255,.4) 300deg,#fff 360deg);}
 
-        /* SECTION HEAD */
+        /* PERIOD FILTER */
+        .chart-filter-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+        .filter-label{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);}
+        .filter-btns{display:flex;gap:6px;}
+        .filter-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:5px 14px;border-radius:3px;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .18s;}
+        .filter-btn:hover{border-color:#444;color:var(--white);}
+        .filter-btn.active{background:var(--accent);border-color:var(--accent);color:var(--black);font-weight:700;}
+
+        /* CHARTS */
+        .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px;}
+        .chart-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;position:relative;}
+        .chart-card.full{grid-column:1/-1;}
+        .chart-card h3{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:3px;margin-bottom:20px;color:var(--white);}
+        .chart-container{position:relative;height:260px;}
+        .chart-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(28,28,28,.75);border-radius:4px;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);opacity:0;pointer-events:none;transition:opacity .2s;}
+        .chart-loading.visible{opacity:1;pointer-events:auto;}
+
+        .two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px;}
         .section-head{display:flex;align-items:center;gap:16px;margin-bottom:18px;}
         .section-head h2{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:4px;white-space:nowrap;}
         .section-head hr{flex:1;border:none;border-top:1px solid var(--border);}
         .section-head a{font-size:10px;letter-spacing:2px;color:var(--accent);text-decoration:none;text-transform:uppercase;white-space:nowrap;}
-
-        /* TWO-COL */
-        .two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px;}
-
-        /* TABLE */
         .table-wrap{background:var(--card);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
         table{width:100%;border-collapse:collapse;}
         thead th{padding:12px 18px;text-align:left;font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);font-weight:400;background:var(--surface);border-bottom:1px solid var(--border);}
@@ -122,7 +134,15 @@ foreach ($orderStatuses as $status) {
         .pill-red{background:rgba(255,60,60,.12);color:var(--accent2);}
         .pill-muted{background:rgba(255,255,255,.06);color:var(--muted);}
 
-        /* SPINNING VINYL ACCENT ROW */
+        .status-select{-webkit-appearance:none;appearance:none;border:1px solid transparent;border-radius:2px;background:transparent;color:inherit;font-size:9px;letter-spacing:2px;text-transform:uppercase;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;padding:3px 8px;transition:border-color .2s,background .2s;}
+        .status-select:hover,.status-select:focus{border-color:var(--border);background:var(--surface);outline:none;}
+        .status-select.saving{opacity:.5;pointer-events:none;}
+        .status-select option{background:#1c1c1c;color:#f0ede8;}
+        @keyframes saved-flash{0%{opacity:1}40%{opacity:.3}100%{opacity:1}}
+        .status-select.saved{animation:saved-flash .4s ease;}
+        .save-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent3);margin-left:6px;opacity:0;transition:opacity .3s;vertical-align:middle;}
+        .save-dot.visible{opacity:1;}
+
         .vinyl-accent-row{display:flex;gap:16px;align-items:center;padding:36px 0 0;}
         .mini-disc{width:56px;height:56px;border-radius:50%;background:conic-gradient(from 0deg,#1a1a1a 0deg,#252525 60deg,#1a1a1a 120deg,#252525 180deg,#1a1a1a 240deg,#252525 300deg,#1a1a1a 360deg);display:flex;align-items:center;justify-content:center;}
         .mini-disc:nth-child(1){animation:spin 5s linear infinite;}
@@ -130,34 +150,6 @@ foreach ($orderStatuses as $status) {
         .mini-disc:nth-child(3){animation:spin 4s linear infinite reverse;opacity:.35;}
         .mini-disc-center{width:18px;height:18px;border-radius:50%;background:var(--card);}
         @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
-
-        /* CHARTS */
-        .charts-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-bottom:48px;}
-        .chart-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:24px;position:relative;}
-        .chart-card h3{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;margin-bottom:20px;color:var(--white);}
-        .chart-container{position:relative;height:280px;}
-
-        /* STATUS EDITOR */
-        .status-select{
-            -webkit-appearance:none;appearance:none;
-            border:1px solid transparent;border-radius:2px;
-            background:transparent;color:inherit;
-            font-size:9px;letter-spacing:2px;text-transform:uppercase;font-weight:600;
-            font-family:'DM Sans',sans-serif;cursor:pointer;padding:3px 8px;
-            transition:border-color .2s,background .2s;
-        }
-        .status-select:hover,.status-select:focus{border-color:var(--border);background:var(--surface);outline:none;}
-        .status-select.saving{opacity:.5;pointer-events:none;}
-        .status-select option{background:#1c1c1c;color:#f0ede8;}
-
-        /* flash animation when saved */
-        @keyframes saved-flash{0%{opacity:1}40%{opacity:.3}100%{opacity:1}}
-        .status-select.saved{animation:saved-flash .4s ease;}
-
-        /* inline save indicator */
-        .save-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent3);
-            margin-left:6px;opacity:0;transition:opacity .3s;vertical-align:middle;}
-        .save-dot.visible{opacity:1;}
     </style>
 </head>
 <body>
@@ -182,25 +174,26 @@ foreach ($orderStatuses as $status) {
             <p>Live stats from your biniru store.</p>
         </div>
 
+        <!-- STAT CARDS -->
         <div class="stat-grid">
             <div class="stat-card">
                 <div class="stat-top-bar"></div>
                 <div class="stat-label">Users</div>
-                <div class="stat-value"><?= str_pad($userCount,  2,'0',STR_PAD_LEFT) ?></div>
+                <div class="stat-value"><?= str_pad($userCount, 2, '0', STR_PAD_LEFT) ?></div>
                 <div class="stat-sub">Registered accounts</div>
                 <div class="disc-deco"></div>
             </div>
             <div class="stat-card">
                 <div class="stat-top-bar"></div>
                 <div class="stat-label">Vinyl Records</div>
-                <div class="stat-value"><?= str_pad($vinylCount, 2,'0',STR_PAD_LEFT) ?></div>
+                <div class="stat-value"><?= str_pad($vinylCount, 2, '0', STR_PAD_LEFT) ?></div>
                 <div class="stat-sub">In catalog</div>
                 <div class="disc-deco"></div>
             </div>
             <div class="stat-card">
                 <div class="stat-top-bar"></div>
                 <div class="stat-label">Total Sales</div>
-                <div class="stat-value"><?= str_pad($orderCount, 2,'0',STR_PAD_LEFT) ?></div>
+                <div class="stat-value"><?= str_pad($orderCount, 2, '0', STR_PAD_LEFT) ?></div>
                 <div class="stat-sub">Orders placed</div>
                 <div class="disc-deco"></div>
             </div>
@@ -213,27 +206,43 @@ foreach ($orderStatuses as $status) {
             </div>
         </div>
 
+        <div class="chart-filter-row">
+            <span class="filter-label">Period</span>
+            <div class="filter-btns">
+                <button class="filter-btn" data-period="3">3M</button>
+                <button class="filter-btn active" data-period="6">6M</button>
+                <button class="filter-btn" data-period="12">12M</button>
+                <button class="filter-btn" data-period="ytd">YTD</button>
+                <button class="filter-btn" data-period="all">All</button>
+            </div>
+        </div>
+
+        <!-- CHARTS -->
         <div class="charts-grid">
             <div class="chart-card">
                 <h3>REVENUE TREND</h3>
                 <div class="chart-container">
                     <canvas id="revenueChart"></canvas>
+                    <div class="chart-loading" id="rev-loading">Loading…</div>
                 </div>
             </div>
             <div class="chart-card">
                 <h3>SALES BY MONTH</h3>
                 <div class="chart-container">
                     <canvas id="salesChart"></canvas>
+                    <div class="chart-loading" id="sales-loading">Loading…</div>
                 </div>
             </div>
-            <div class="chart-card">
+            <div class="chart-card full">
                 <h3>ORDER STATUS</h3>
-                <div class="chart-container">
+                <div class="chart-container" style="height:220px;max-width:420px;margin:0 auto;">
                     <canvas id="statusChart"></canvas>
+                    <div class="chart-loading" id="status-loading">Loading…</div>
                 </div>
             </div>
         </div>
 
+        <!-- TABLES -->
         <div class="two-col">
             <div>
                 <div class="section-head">
@@ -279,7 +288,7 @@ foreach ($orderStatuses as $status) {
                                     'Cancelled' => 'pill-red',
                                     default     => 'pill-muted'
                                 };
-                                $selectColor = match($o['status']) {
+                                $selColor = match($o['status']) {
                                     'Completed' => 'color:var(--accent3)',
                                     'Shipped'   => 'color:var(--accent)',
                                     'Cancelled' => 'color:var(--accent2)',
@@ -291,11 +300,11 @@ foreach ($orderStatuses as $status) {
                                 <td>₱<?= number_format($o['total_amount'], 2) ?></td>
                                 <td>
                                     <select class="status-select pill <?= $pillClass ?>"
-                                            style="<?= $selectColor ?>"
+                                            style="<?= $selColor ?>"
                                             data-order-id="<?= $o['order_id'] ?>"
                                             data-current="<?= $o['status'] ?>">
                                         <?php foreach(['Pending','Shipped','Completed','Cancelled'] as $s): ?>
-                                        <option value="<?= $s ?>" <?= $o['status'] === $s ? 'selected' : '' ?>><?= $s ?></option>
+                                        <option value="<?= $s ?>" <?= $o['status']===$s ? 'selected':'' ?>><?= $s ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                     <span class="save-dot" id="dot-<?= $o['order_id'] ?>"></span>
@@ -310,185 +319,166 @@ foreach ($orderStatuses as $status) {
             </div>
         </div>
 
-        <!-- spinning vinyl accent -->
         <div class="vinyl-accent-row">
             <div class="mini-disc"><div class="mini-disc-center"></div></div>
             <div class="mini-disc"><div class="mini-disc-center"></div></div>
             <div class="mini-disc"><div class="mini-disc-center"></div></div>
         </div>
-
     </main>
 
     <script>
-        const chartOptions = {
+    const BASE_OPTS = {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 400 },
+        plugins: {
+            legend: { labels: { color: '#f0ede8', font: { family: "'DM Sans', sans-serif", size: 11 } } },
+            tooltip: { backgroundColor: '#1c1c1c', borderColor: '#2a2a2a', borderWidth: 1, titleColor: '#f0ede8', bodyColor: '#888', padding: 10 }
+        },
+        scales: {
+            y: { ticks: { color: '#555' }, grid: { color: '#2a2a2a' }, border: { color: '#2a2a2a' } },
+            x: { ticks: { color: '#555' }, grid: { color: '#2a2a2a' }, border: { color: '#2a2a2a' } }
+        }
+    };
+
+    const STATUS_COLORS = { Completed: '#7df3c0', Shipped: '#f5e642', Cancelled: '#ff3c3c', Pending: '#888' };
+    const PILL_CLASSES  = { Completed: 'pill-green', Shipped: 'pill-yellow', Cancelled: 'pill-red', Pending: 'pill-muted' };
+    const SEL_COLORS    = { Completed: 'color:var(--accent3)', Shipped: 'color:var(--accent)', Cancelled: 'color:var(--accent2)', Pending: 'color:var(--muted)' };
+
+    // ── REVENUE CHART (Line) ──────────────────────────────────────────────
+    const revenueChart = new Chart(document.getElementById('revenueChart'), {
+        type: 'line',
+        data: {
+            labels: <?= json_encode($monthLabels) ?>,
+            datasets: [{
+                label: 'Revenue (₱)',
+                data: <?= json_encode($revenueData) ?>,
+                borderColor: '#f5e642',
+                backgroundColor: 'rgba(245,230,66,0.08)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#f5e642',
+                pointBorderColor: '#1c1c1c',
+                pointBorderWidth: 2,
+                pointRadius: 4
+            }]
+        },
+        options: BASE_OPTS
+    });
+
+    const salesChart = new Chart(document.getElementById('salesChart'), {
+        type: 'bar',
+        data: {
+            labels: <?= json_encode($monthLabels) ?>,
+            datasets: [{
+                label: 'Orders',
+                data: <?= json_encode($orderData) ?>,
+                backgroundColor: 'rgba(125,243,192,0.75)',
+                hoverBackgroundColor: '#7df3c0',
+                borderRadius: 4,
+                borderSkipped: false
+            }]
+        },
+        options: BASE_OPTS
+    });
+
+    const statusChart = new Chart(document.getElementById('statusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: <?= json_encode($statusLabels) ?>,
+            datasets: [{
+                data: <?= json_encode($statusCounts) ?>,
+                backgroundColor: <?= json_encode($statusColors) ?>,
+                borderColor: '#1c1c1c',
+                borderWidth: 2
+            }]
+        },
+        options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: { duration: 400 },
             plugins: {
-                legend: {
-                    labels: {
-                        color: '#f0ede8',
-                        font: { family: "'DM Sans', sans-serif", size: 11 }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    ticks: { color: '#555' },
-                    grid: { color: '#2a2a2a' },
-                    border: { color: '#2a2a2a' }
-                },
-                x: {
-                    ticks: { color: '#555' },
-                    grid: { color: '#2a2a2a' },
-                    border: { color: '#2a2a2a' }
-                }
+                legend: { position: 'bottom', labels: { color: '#f0ede8', font: { family: "'DM Sans', sans-serif", size: 11 }, padding: 16 } },
+                tooltip: { backgroundColor: '#1c1c1c', borderColor: '#2a2a2a', borderWidth: 1, titleColor: '#f0ede8', bodyColor: '#888', padding: 10 }
             }
-        };
-
-        const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-        const revenueChart = new Chart(revenueCtx, {
-            type: 'line',
-            data: {
-                labels: <?= json_encode($monthLabels) ?>,
-                datasets: [{
-                    label: 'Revenue (₱)',
-                    data: <?= json_encode($revenueData) ?>,
-                    borderColor: '#f5e642',
-                    backgroundColor: 'rgba(245, 230, 66, 0.1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: '#f5e642',
-                    pointBorderColor: '#1c1c1c',
-                    pointBorderWidth: 2
-                }]
-            },
-            options: chartOptions
-        });
-
-        const salesCtx = document.getElementById('salesChart').getContext('2d');
-        const salesChart = new Chart(salesCtx, {
-            type: 'bar',
-            data: {
-                labels: <?= json_encode($monthLabels) ?>,
-                datasets: [{
-                    label: 'Orders',
-                    data: <?= json_encode($orderData) ?>,
-                    backgroundColor: ['#7df3c0','#7df3c0','#7df3c0','#7df3c0','#7df3c0','#7df3c0'],
-                    borderRadius: 3,
-                    borderSkipped: false
-                }]
-            },
-            options: chartOptions
-        });
-
-        const statusCtx = document.getElementById('statusChart').getContext('2d');
-        const statusChart = new Chart(statusCtx, {
-            type: 'doughnut',
-            data: {
-                labels: <?= json_encode($statusLabels) ?>,
-                datasets: [{
-                    data: <?= json_encode($statusCounts) ?>,
-                    backgroundColor: <?= json_encode($statusColors) ?>,
-                    borderColor: '#1c1c1c',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: {
-                            color: '#f0ede8',
-                            font: { family: "'DM Sans', sans-serif", size: 11 },
-                            padding: 16
-                        }
-                    }
-                }
-            }
-        });
-
-        // ── STATUS COLOUR MAP ──
-        const STATUS_COLORS = {
-            Completed: '#7df3c0',
-            Shipped:   '#f5e642',
-            Cancelled: '#ff3c3c',
-            Pending:   '#888'
-        };
-        const PILL_CLASSES = {
-            Completed: 'pill-green',
-            Shipped:   'pill-yellow',
-            Cancelled: 'pill-red',
-            Pending:   'pill-muted'
-        };
-        const SELECT_COLORS = {
-            Completed: 'color:var(--accent3)',
-            Shipped:   'color:var(--accent)',
-            Cancelled: 'color:var(--accent2)',
-            Pending:   'color:var(--muted)'
-        };
-
-        function refreshStatusChart(statusRows) {
-            const labels = statusRows.map(r => r.status);
-            const counts = statusRows.map(r => parseInt(r.count));
-            const colors = statusRows.map(r => STATUS_COLORS[r.status] || '#888');
-            statusChart.data.labels = labels;
-            statusChart.data.datasets[0].data   = counts;
-            statusChart.data.datasets[0].backgroundColor = colors;
-            statusChart.update();
         }
+    });
 
-        // ── INLINE STATUS EDITOR ──
-        document.querySelectorAll('.status-select').forEach(sel => {
-            sel.addEventListener('change', async function () {
-                const orderId = this.dataset.orderId;
-                const newStatus = this.value;
-                const dot = document.getElementById('dot-' + orderId);
+    function setLoading(on) {
+        ['rev-loading','sales-loading','status-loading'].forEach(id =>
+            document.getElementById(id).classList.toggle('visible', on)
+        );
+    }
 
-                // Swap pill class immediately for snappy feel
-                this.className = 'status-select pill ' + (PILL_CLASSES[newStatus] || 'pill-muted');
-                this.style.cssText = SELECT_COLORS[newStatus] || 'color:var(--muted)';
-                this.classList.add('saving');
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            setLoading(true);
+            try {
+                const res  = await fetch(`../controllers/vinylController.php?action=chartData&period=${this.dataset.period}`);
+                const data = await res.json();
 
-                try {
-                    const res  = await fetch('../controllers/vinylController.php', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-Action': 'updateOrderStatus' },
-                        body: JSON.stringify({ order_id: orderId, status: newStatus })
-                    });
-                    const data = await res.json();
+                revenueChart.data.labels = data.labels;
+                revenueChart.data.datasets[0].data = data.revenue;
+                revenueChart.update();
 
-                    if (data.success) {
-                        // Animate saved dot
-                        dot.classList.add('visible');
-                        setTimeout(() => dot.classList.remove('visible'), 1400);
+                salesChart.data.labels = data.labels;
+                salesChart.data.datasets[0].data = data.orders;
+                salesChart.update();
 
-                        // Live-update status chart
-                        refreshStatusChart(data.statusRows);
-
-                        // Update revenue stat card if it changed (cancelled orders excluded)
-                        const revEl = document.querySelector('.stat-card:nth-child(4) .stat-value');
-                        if (revEl) {
-                            revEl.textContent = '₱' + Math.round(data.totalRevenue).toLocaleString();
-                        }
-
-                        this.dataset.current = newStatus;
-                    } else {
-                        // Revert on failure
-                        this.value = this.dataset.current;
-                        alert(data.message || 'Update failed');
-                    }
-                } catch (err) {
-                    this.value = this.dataset.current;
-                    alert('Network error. Please try again.');
-                } finally {
-                    this.classList.remove('saving');
-                }
-            });
+                updateStatusChart(data.statusRows);
+            } catch(e) { console.error('Chart fetch failed:', e); }
+            finally { setLoading(false); }
         });
+    });
+
+    function updateStatusChart(rows) {
+        statusChart.data.labels = rows.map(r => r.status);
+        statusChart.data.datasets[0].data = rows.map(r => parseInt(r.count));
+        statusChart.data.datasets[0].backgroundColor = rows.map(r => STATUS_COLORS[r.status] || '#888');
+        statusChart.update();
+    }
+
+    // ── INLINE ORDER STATUS EDITOR ────────────────────────────────────────
+    document.querySelectorAll('.status-select').forEach(sel => {
+        sel.addEventListener('change', async function () {
+            const orderId   = this.dataset.orderId;
+            const newStatus = this.value;
+            const dot = document.getElementById('dot-' + orderId);
+
+            this.className = 'status-select pill ' + (PILL_CLASSES[newStatus] || 'pill-muted');
+            this.style.cssText = SEL_COLORS[newStatus] || 'color:var(--muted)';
+            this.classList.add('saving');
+
+            try {
+                const res  = await fetch('../controllers/vinylController.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Action': 'updateOrderStatus' },
+                    body: JSON.stringify({ order_id: orderId, status: newStatus })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    dot.classList.add('visible');
+                    setTimeout(() => dot.classList.remove('visible'), 1400);
+                    updateStatusChart(data.statusRows);
+                    const revEl = document.querySelector('.stat-card:nth-child(4) .stat-value');
+                    if (revEl) revEl.textContent = '₱' + Math.round(data.totalRevenue).toLocaleString();
+                    this.dataset.current = newStatus;
+                } else {
+                    this.value = this.dataset.current;
+                    alert(data.message || 'Update failed');
+                }
+            } catch(err) {
+                this.value = this.dataset.current;
+                alert('Network error. Please try again.');
+            } finally {
+                this.classList.remove('saving');
+            }
+        });
+    });
     </script>
 </body>
-
 </html>
